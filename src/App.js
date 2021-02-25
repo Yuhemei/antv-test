@@ -1,12 +1,11 @@
 /* eslint-disable no-undef */
 import React from "react";
-
-import Graphin, { Utils } from "@antv/graphin";
-
-import { Select, Row, Col, Card, DatePicker, version, Button } from "antd";
-
-import 'antd/dist/antd.css'; 
-import './index.less'
+import Graphin, { GraphinContext, Utils } from "@antv/graphin";
+import { ContextMenu } from "@antv/graphin-components";
+import { Select, Row, Col, Card, message } from "antd";
+import { TagFilled, DeleteFilled, ExpandAltOutlined } from "@ant-design/icons";
+import "antd/dist/antd.css";
+import "./App.less";
 // 引入Graphin CSS
 
 import {
@@ -37,7 +36,6 @@ const SelectOption = Select.Option;
 const LayoutSelector = (props) => {
   const { value, onChange, options } = props;
   // 包裹在graphin内部的组件，将获得graphin提供的额外props
-
   return (
     <div
     // style={{ position: 'absolute', top: 10, left: 10 }}
@@ -98,7 +96,7 @@ const layouts = [
   {
     type: "force",
     preventOverlap: true,
-    // center: [200, 200], // 可选，默认为图的中心
+    center: [200, 200], // 可选，默认为图的中心
     linkDistance: 50, // 可选，边长
     nodeStrength: 30, // 可选
     edgeStrength: 0.8, // 可选
@@ -190,42 +188,97 @@ const layouts = [
     // },
   },
 ];
+
+// 右键菜单部分
+const { Menu } = ContextMenu;
+const options = [
+  {
+    key: "tag",
+    icon: <TagFilled />,
+    name: "打标",
+  },
+  {
+    key: "delete",
+    icon: <DeleteFilled />,
+    name: "删除",
+  },
+  {
+    key: "expand",
+    icon: <ExpandAltOutlined />,
+    name: "扩散",
+  },
+];
+const CanvasMenu = () => {
+  const { graph, contextmenu } = React.useContext(GraphinContext);
+  const context = contextmenu.canvas;
+  const handleDownload = () => {
+    graph.downloadFullImage("canvas-contextmenu");
+    context.handleClose();
+  };
+  const handleClear = () => {
+    message.info(`清除画布成功`);
+    context.handleClose();
+  };
+  const handleStopLayout = () => {
+    message.info(`停止布局成功`);
+    context.handleClose();
+  };
+  return (
+    <Menu bindType="canvas">
+      <Menu.Item onClick={handleClear}>清除画布</Menu.Item>
+      <Menu.Item onClick={handleStopLayout}>停止布局</Menu.Item>
+      <Menu.Item onClick={handleDownload}>下载画布</Menu.Item>
+    </Menu>
+  );
+};
+
 export default () => {
   const [type, setLayout] = React.useState("graphin-force");
   const handleChange = (value) => {
     console.log("value", value);
     setLayout(value);
   };
-
+  const menuHandleChange = (menuItem, menuData) => {
+    message.info(`元素：${menuData.id}，动作：${menuItem.name}`);
+  };
   const layout = layouts.find((item) => item.type === type);
   return (
-    <div>
-      <Row className="border">
-        <Col>
-          <h1>antd version: {version}</h1>
-          <DatePicker />
-          <Button type="primary" style={{ marginLeft: 8 }}>
-            Primary Button
-          </Button>
-        </Col>
-      </Row>
-      <Row gutter={24}>
-        <Col span={24}>
-          <Card
-            title="布局切换"
-            bodyStyle={{ height: "554px", overflow: "scroll" }}
-            extra={
-              <LayoutSelector
-                options={layouts}
-                value={type}
+    <Row style={{ minHeight: 100 }}>
+      <Col span={24}>
+        <Card
+          title="布局切换"
+          bodyStyle={{ height: "100%", overflow: "visible" }}
+          extra={
+            <LayoutSelector
+              options={layouts}
+              value={type}
+              onChange={handleChange}
+            />
+          }
+        >
+          <Graphin data={data} layout={layout}>
+            <ContextMenu style={{ width: "80px" }}>
+              <Menu
+                options={options}
+                onChange={menuHandleChange}
+                bindType="node"
+              ></Menu>
+            </ContextMenu>
+            <ContextMenu style={{ width: "80px" }} bindType="canvas">
+              <CanvasMenu />
+            </ContextMenu>
+            <ContextMenu style={{ width: "120px" }} bindType="edge">
+              <Menu
+                options={options.map((item) => {
+                  return { ...item, name: `${item.name}-EDGE` };
+                })}
                 onChange={handleChange}
+                bindType="edge"
               />
-            }
-          >
-            <Graphin data={data} layout={layout}></Graphin>
-          </Card>
-        </Col>
-      </Row>
-    </div>
+            </ContextMenu>
+          </Graphin>
+        </Card>
+      </Col>
+    </Row>
   );
 };
