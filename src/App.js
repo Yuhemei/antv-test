@@ -31,7 +31,7 @@ const iconMap = {
 };
 
 const data = Utils.mock(10).tree().graphin();
-
+console.log(data);
 const SelectOption = Select.Option;
 const LayoutSelector = (props) => {
   const { value, onChange, options } = props;
@@ -223,11 +223,28 @@ const CanvasMenu = () => {
     message.info(`停止布局成功`);
     context.handleClose();
   };
+  const handleDataShow = () => {
+    let nodeId = "node-" + data.nodes.length;
+    data.nodes.push({
+      id: nodeId,
+      label: nodeId,
+      type: "graphin-circle",
+      comboId:undefined,
+      style:{
+        label: {
+          value:nodeId
+        }
+      }
+    });
+    console.log(data.nodes);
+    graph.updateItem()
+  };
   return (
     <Menu bindType="canvas">
       <Menu.Item onClick={handleClear}>清除画布</Menu.Item>
       <Menu.Item onClick={handleStopLayout}>停止布局</Menu.Item>
       <Menu.Item onClick={handleDownload}>下载画布</Menu.Item>
+      <Menu.Item onClick={handleDataShow}>增加数据</Menu.Item>
     </Menu>
   );
 };
